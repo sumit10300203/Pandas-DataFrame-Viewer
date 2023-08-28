@@ -19,7 +19,7 @@
 
 **If this sounds interesting to you, consider starring in my GitHub Repo.**
 
-**Share the website with your coder friends.**
+**Share the website with your friends.**
 
 ### **Screenshots**
 ![1](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a537c19b-7638-4042-8561-dcdf28ab6e4c)
