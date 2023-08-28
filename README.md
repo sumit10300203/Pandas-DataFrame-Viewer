@@ -19,7 +19,11 @@
 
 ### **Screenshots**
 ![1](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a537c19b-7638-4042-8561-dcdf28ab6e4c)
+
 ![2](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a840cc75-513d-4f2b-9645-5afd4cdd9843)
+
 ![3](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a8acd9d7-8d89-499d-9d9a-73907725d021)
+
 ![4](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/57c44e26-aefe-4f79-bfec-d1d7ffee64ef)
+
 ![5](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/d3f688af-3860-45f3-829b-4e791cd40a2c)
