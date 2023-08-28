@@ -22,12 +22,13 @@
 **Share the website with your friends.**
 
 ### **Screenshots**
-![1](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a537c19b-7638-4042-8561-dcdf28ab6e4c)
 
-![2](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a840cc75-513d-4f2b-9645-5afd4cdd9843)
+![1](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/53fb9d30-cb32-4aaa-87ff-1c91d1386751)
 
-![3](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/a8acd9d7-8d89-499d-9d9a-73907725d021)
+![2](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/469c5264-3c57-491a-afdb-c4f5128eda41)
 
-![4](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/57c44e26-aefe-4f79-bfec-d1d7ffee64ef)
+![3](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/c9264584-ed75-4b54-a409-7d22c7b313c8)
 
-![5](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/d3f688af-3860-45f3-829b-4e791cd40a2c)
+![4](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/7baa4c09-18d4-4aa5-8dcb-08c454d1c83e)
+
+![5](https://github.com/sumit10300203/Pandas-DataFrame-Viewer/assets/66067910/048c6f4a-d52b-4c0f-b249-35a84596cfa7)
