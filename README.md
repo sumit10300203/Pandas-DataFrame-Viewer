@@ -4,7 +4,7 @@
 * **Mail me on sumit10300203@gmail.com**
 * **Please leave us your Feedback on [Feedback G-Form>](https://forms.gle/vzVN6h7FtwCn45hw6)**
 
-##### :film_projector: About the Project
+### :film_projector: About the Project
 
 **v1.0 Beta**
 
