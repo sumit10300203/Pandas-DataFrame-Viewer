@@ -42,6 +42,8 @@ with col[0].container():
 * **As this project is in beta stage, if you find any :red[errors] please send me a screenshot in the feedback form.**
 
 **If this sounds interesting to you, consider starring in my GitHub Repo.**
+
+**Share the website with your friends.**
                 
 **[GitHub Repo Link >](https://bit.ly/3QT0wkx)**
 ''')
