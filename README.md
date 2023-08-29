@@ -1,4 +1,4 @@
-# Pandas-DataFrame-Viewer
+# Pandas DataFrame Viewer
 
 **Website Link: https://pandas-dataframe-viewer-plotter.streamlit.app/**
 
