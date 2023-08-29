@@ -53,12 +53,12 @@ st.divider()
 
 with st.container():
     st.markdown('''
-### 🔮 Future Work
+##### 🔮 Future Work
 
 * **Adding Code Export for graphs and for changes in dataframe**
 * **More Error Handling**
 
-### 📞 Contact with me
+##### 📞 Contact with me
 
 * **Connect with me on [LinkedIn >](https://bit.ly/3DyD6cP)**            
 * **Mail me on sumit10300203@gmail.com**
