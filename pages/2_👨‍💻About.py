@@ -6,6 +6,7 @@ from streamlit_extras.no_default_selectbox import selectbox
 from streamlit_extras.grid import grid
 import traceback
 
+
 st.set_page_config(
     page_title="Dataframe Viewer",
     page_icon="📊",
