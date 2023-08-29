@@ -20,7 +20,7 @@ with col[0].container():
 ''')
 
 with col[1].container():
-    st.image("images/ug kid img.png", width = 150, clamp = True)
+    st.image("images/ug kid img.png", width = 100, clamp = True)
 
 st.divider()
 
