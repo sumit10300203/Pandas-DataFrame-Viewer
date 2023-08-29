@@ -14,6 +14,7 @@
 * **As this project is in beta stage, if you find any errors please send me a screenshot in the feedback form.**
 
 **If this sounds interesting to you, consider starring in my GitHub Repo.**
+
 **Share the website with your friends.**
 
 * **Connect with me on [LinkedIn >](https://bit.ly/3DyD6cP)**            
