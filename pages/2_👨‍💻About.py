@@ -46,7 +46,7 @@ with col[0].container():
 ''')
 
 with col[1].container():
-    st.image("images/4002785.png", width = 450, clamp = True)
+    st.image("images/4002785.png", width = 400, clamp = True)
 
 st.divider()
 
