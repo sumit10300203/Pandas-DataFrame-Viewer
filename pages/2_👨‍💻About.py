@@ -50,7 +50,7 @@ with col[1].container():
 
 st.divider()
 
-with col[0].container():
+with st.container():
     st.markdown('''
 * **Connect with me on [LinkedIn >](https://bit.ly/3DyD6cP)**            
 * **Mail me on sumit10300203@gmail.com**
