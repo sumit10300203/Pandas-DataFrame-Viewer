@@ -411,8 +411,8 @@ with main_tabs[3]:
         with reshaper_tabs[1]:
             grid_grapher = grid([1, 2], vertical_align="bottom")
             with grid_grapher.expander(label = 'Features', expanded = True):
-                id_vars = selectbox('**Select id_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_1', no_selection_label = None)
-                value_vars = selectbox('**Select value_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_2',no_selection_label = None)
+                id_vars = st.multiselect('**Select id_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_1', default = None)
+                value_vars = st.multiselect('**Select value_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_2',default = None)
             with grid_grapher.container():
                 try:
                     if id_vars or value_vars:
