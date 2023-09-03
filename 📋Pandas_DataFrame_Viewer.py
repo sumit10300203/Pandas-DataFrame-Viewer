@@ -389,9 +389,9 @@ with main_tabs[3]:
         with reshaper_tabs[0]:
             grid_grapher = grid([1, 2], vertical_align="bottom")
             with grid_grapher.expander(label = 'Features', expanded = True):
-                index = selectbox('**Select index value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_1', no_selection_label = None)
-                column = selectbox('**Select column value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_2',no_selection_label = None)
-                value = selectbox("**Select value's value**", curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_3',no_selection_label = None)
+                index = st.multiselect('**Select index value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_1', default = None)
+                column = st.multiselect('**Select column value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_2',default = None)
+                value = st.multiselect("**Select value's value**", curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_3',default = None)
                 aggfunc = st.selectbox('**Select aggfunc**', ['count','mean', 'median','mode','min','max','sum'], key = 'grid_reshaper_1_4', index = 1)
             with grid_grapher.container():
                 try:
