@@ -9,7 +9,7 @@
 * **This website can be used for Data Analysis, Data Filtering, Data Modifying and Data Visualization purposes.**
 * **This Project is solely inspired by my experience with the [`PandasGUI`]((https://github.com/adamerose/PandasGUI)) Library.**
 * **Re-created most of the functions of PandasGUI library.**
-* **Libraries Used: [`Streamlit`](https://streamlit.io/), [`Streamlit_extras`](https://extras.streamlit.app/), [`Pandas`](https://pandas.pydata.org/), [`Numpy`](https://numpy.org/), [`Plotly`](https://plotly.com/), [`Wordcloud`](https://amueller.github.io/word_cloud/), [`PygWalker`](https://github.com/Kanaries/pygwalker), [`Sketch`](https://github.com/approximatelabs/sketch). `New`**
+* **Libraries Used: [`Streamlit`](https://streamlit.io/), [`Streamlit_extras`](https://extras.streamlit.app/), [`Pandas`](https://pandas.pydata.org/), [`Numpy`](https://numpy.org/), [`Plotly`](https://plotly.com/), [`Wordcloud`](https://amueller.github.io/word_cloud/), [`PygWalker`](https://github.com/Kanaries/pygwalker), [`Sketch`](https://github.com/approximatelabs/sketch). `(New)`**
 * **Implemented `PygWalker` for more efficient Data Analysis. `New`**
 * **Implemented `Sketch` Library for data analysis with the help of AI. `New`**
 * **Stores data in browser's cache.**
