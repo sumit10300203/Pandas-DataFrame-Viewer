@@ -8,11 +8,17 @@ from streamlit_extras.no_default_selectbox import selectbox
 from streamlit_extras.grid import grid
 import traceback
 from wordcloud import WordCloud
+import pygwalker as pyg
+import sketch
+import os
+
+os.environ['SKETCH_MAX_COLUMNS'] = '50'
 
 st.set_page_config(
     page_title="Dataframe Viewer",
     page_icon="📊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state = "collapsed"
 )
 
 def convert_df(df, index = False):
@@ -33,9 +39,10 @@ with st.sidebar:
         st.session_state.select_df = None
         st.session_state.filtered_df = pd.DataFrame()
 
-st.title("**Pandas DataFrame Viewer**", anchor = False)
+st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
+st.caption("**Made for Coders with ❤️**")
 
-main_tabs = st.tabs(['**DataFrame**', "**Statistics**", "**Grapher**", "**Reshaper**"])
+main_tabs = st.tabs(['**DataFrame**', "**Statistics**", "**Grapher**", "**Reshaper**", "**PygWalker**", "**Ask AI**"])
 
 with main_tabs[0]:
     st.write("")
@@ -504,3 +511,34 @@ with main_tabs[3]:
                     log = traceback.format_exc()
             st.subheader("**Console Log**", anchor = False)
             st.markdown(f'{log}')
+
+with main_tabs[4]:
+    if st.session_state.select_df:
+        st.markdown("**Are you sure of proceeding to PygWalker interface?**")
+        try:
+            if st.button("Continue", key = 'PygWalker'):
+                pyg.walk(curr_filtered_df, env = 'Streamlit', dark = 'media')
+        except Exception as e:
+            st.dataframe(pd.DataFrame(), use_container_width = True)
+            log = traceback.format_exc()
+        st.subheader("**Console Log**", anchor = False)
+        st.markdown(f'{log}')
+
+
+with main_tabs[5]:
+    if st.session_state.select_df:
+        preference_ai = st.radio("**Select your Preference**", options = ["**Ask about the selected Dataframe**", "**Ask how to perform actions on selected Dataframe**"], horizontal = True)
+        prompt = st.text_area("Enter Promt", placeholder = "Enter your promt", label_visibility="collapsed")
+        proceed_ai = st.button("Continue", key = 'ask_ai')
+        with st.expander("**AI says**", expanded = True):
+            st.divider()
+            try:
+                if preference_ai == "**Ask about the selected Dataframe**" and prompt and proceed_ai:
+                    st.markdown(curr_filtered_df.sketch.ask(prompt, call_display=False))
+                elif preference_ai == "**Ask how to perform actions on selected Dataframe**" and prompt and proceed_ai:
+                    st.markdown(curr_filtered_df.sketch.howto(prompt, call_display=False))
+            except Exception as e:
+                st.dataframe(pd.DataFrame(), use_container_width = True)
+                log = traceback.format_exc()
+        st.subheader("**Console Log**", anchor = False)
+        st.markdown(f'{log}')
