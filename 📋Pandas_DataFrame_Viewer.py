@@ -441,7 +441,7 @@ with main_tabs[3]:
             with grid_grapher.expander(label = 'Features', expanded = True):
                 other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_3_1', no_selection_label = None)
                 if other:
-                    other_dataframe = st.session_state.files[st.session_state.file_name[other]]
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
                 how = st.selectbox('**Select how**', ['inner', 'left', 'right', 'outer'], key = 'grid_reshaper_3_2', index = 0)
                 left_on = st.multiselect('**Select left on values**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_3_3',default = None)
                 right_on = st.multiselect('**Select right on values (Other DataFrame)**', other_dataframe.columns.to_list(), key = 'grid_reshaper_3_4',default = None)
@@ -467,7 +467,7 @@ with main_tabs[3]:
             with grid_grapher.expander(label = 'Features', expanded = True):
                 other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_4_1', no_selection_label = None)
                 if other:
-                    other_dataframe = st.session_state.files[st.session_state.file_name[other]]
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
                 axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
                 ignore_index = st.checkbox('Ignore Index ?', key = 'grid_reshaper_4_3')
             with grid_grapher.container():
@@ -491,7 +491,7 @@ with main_tabs[3]:
             with grid_grapher.expander(label = 'Features', expanded = True):
                 other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_5_1', no_selection_label = None)
                 if other:
-                    other_dataframe = st.session_state.files[st.session_state.file_name[other]]
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
                 how = st.selectbox('**Select how**', ['inner', 'left', 'right', 'outer'], key = 'grid_reshaper_5_2', index = 0)
                 on = selectbox('**Select on values**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_5_3', no_selection_label = None)
                 lsuffix = st.text_input("**Suffix to use from left frame's overlapping columns**", placeholder = "Enter lsuffix", key = 'grid_reshaper_5_4')
