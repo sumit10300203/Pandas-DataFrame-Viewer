@@ -469,10 +469,11 @@ with main_tabs[3]:
                 if other:
                     other_dataframe = st.session_state.files[st.session_state.file_name[other]]
                 axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
+                ignore_index = st.checkbox('Cumulative ?', key = 'grid_reshaper_4_3')
             with grid_grapher.container():
                 try:
                     if not(other_dataframe.empty):
-                        tmp = pd.concat([curr_filtered_df, other_dataframe], axis = int(axis[0]))
+                        tmp = pd.concat([curr_filtered_df, other_dataframe], axis = int(axis[0]), ignore_index = ignore_index)
                         st.dataframe(tmp, height = 750, use_container_width = True)
                         st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
                         st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Concat_{st.session_state.select_df}", mime='text/csv')
