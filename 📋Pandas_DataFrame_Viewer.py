@@ -469,7 +469,7 @@ with main_tabs[3]:
                 if other:
                     other_dataframe = st.session_state.files[st.session_state.file_name[other]]
                 axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
-                ignore_index = st.checkbox('Cumulative ?', key = 'grid_reshaper_4_3')
+                ignore_index = st.checkbox('Ignore Index ?', key = 'grid_reshaper_4_3')
             with grid_grapher.container():
                 try:
                     if not(other_dataframe.empty):
