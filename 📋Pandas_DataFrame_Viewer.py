@@ -1,316 +1,545 @@
-import streamlit as st
-import streamlit_authenticator as stauth
-from streamlit_extras.grid import grid
-from streamlit_extras.no_default_selectbox import selectbox
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from pytz import timezone
-import json as js
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+from streamlit_extras.dataframe_explorer import dataframe_explorer
+from streamlit_extras.no_default_selectbox import selectbox
+from streamlit_extras.grid import grid
+import traceback
+from wordcloud import WordCloud
+import pygwalker as pyg
+import sketch
+import os
+
+os.environ['SKETCH_MAX_COLUMNS'] = '50'
 
 st.set_page_config(
-    page_title="Occupancy Collection",
-    page_icon="👨‍👩‍👧‍👦",
-    layout="wide"
+    page_title="Dataframe Viewer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state = "collapsed"
 )
 
-if 'authorization_df' not in st.session_state:
-    st.session_state['authorization_df'] = pd.read_csv("Authentication.csv")
+def convert_df(df, index = False):
+    return df.to_csv(index = index).encode('utf-8')
 
-credentials = {"usernames":{}}
+with st.sidebar:
+    with st.expander(label = '**Upload files**', expanded = True):
+        st.session_state.files = st.file_uploader("Upload files", type = ["csv"], accept_multiple_files = True, label_visibility = 'collapsed')
+    if st.session_state.files:
+        st.session_state.file_name = {}
+        for i in range(0, len(st.session_state.files)):
+            st.session_state.file_name[st.session_state.files[i].name] = i
+            if 'csv' in st.session_state.files[i].name or 'CSV' in st.session_state.files[i].name:
+                st.session_state.files[i] = pd.read_csv(st.session_state.files[i])
+                st.session_state.files[i]['Row_Number_'] = np.arange(0, len(st.session_state.files[i]))
+        st.session_state.select_df = selectbox("Select Dataframe", st.session_state.file_name.keys(), no_selection_label = None)
+    else:
+        st.session_state.select_df = None
+        st.session_state.filtered_df = pd.DataFrame()
 
-for uname,name,pwd in zip(st.session_state.authorization_df['username'],st.session_state.authorization_df['Name'],st.session_state.authorization_df['key']):
-    user_dict = {"name": name, "password": pwd}
-    credentials["usernames"].update({uname: user_dict})
+st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
+st.caption("**Made for Coders with ❤️**")
 
-authenticator = stauth.Authenticate(credentials, "occupancy_collector_login", "login", cookie_expiry_days = 1)
+main_tabs = st.tabs(['**DataFrame**', "**Statistics**", "**Grapher**", "**Reshaper**", "**PygWalker**", "**Ask AI**"])
 
-name, authentication_status, username = authenticator.login("Login", "main")
+with main_tabs[0]:
+    st.write("")
+    log = ''
+    if st.session_state.select_df:
+        with st.sidebar:
+            with st.expander(label = '**Filters**'):
+                try:
+                    st.session_state.filtered_df = st.session_state.files[st.session_state.file_name[st.session_state.select_df]]
+                    typess = ['int64', 'float64', 'str', 'bool', 'object', 'timestamp']
+                    columns_to_show_df = st.data_editor(pd.DataFrame({"Column Name": st.session_state.filtered_df.drop('Row_Number_', axis = 1).columns.to_list(), "Show?": True, "Convert Type": st.session_state.filtered_df.drop('Row_Number_', axis = 1).dtypes.astype(str)}), column_config = {"Convert Type": st.column_config.SelectboxColumn("Convert Type", options = typess, required=True, default = 5)}, num_rows="fixed", hide_index = True, disabled = ["Columns"], height = 250, use_container_width = True)
+                    for i in range(0, columns_to_show_df.shape[0]):
+                        if columns_to_show_df["Convert Type"][i] == 'timestamp':
+                            st.session_state.filtered_df[columns_to_show_df["Column Name"][i]] = pd.to_datetime(st.session_state.filtered_df[columns_to_show_df["Column Name"][i]])
+                        else:
+                            st.session_state.filtered_df[columns_to_show_df["Column Name"][i]] = st.session_state.filtered_df[columns_to_show_df["Column Name"][i]].astype(columns_to_show_df["Convert Type"][i])
+                    st.caption("**:red[Note:] Date / Time column will always be converted to Timestamp**")
+                    st.session_state.filtered_df = dataframe_explorer(st.session_state.filtered_df, case=False)
+                    st.session_state.filtered_df.drop('Row_Number_', axis = 1, inplace = True)
+                except:
+                    log = traceback.format_exc()
+                # columns_to_show_df = st.data_editor(pd.DataFrame({"Column Name": st.session_state.filtered_df.columns.to_list(), "Show?": True, "Type": st.session_state.filtered_df.dtypes}), num_rows="fixed", hide_index = True, disabled = ["Columns"], height = 250, use_container_width = True)
+            curr_filtered_df = st.session_state.filtered_df[columns_to_show_df[columns_to_show_df['Show?'] == True]['Column Name'].to_list()]
+        st.data_editor(curr_filtered_df, use_container_width = True, num_rows="dynamic", hide_index = False)
+        st.caption("**:red[Note:] To delete rows, press delete button in keyboard after selecting rows**")
+        st.markdown(f"**DataFrame Shape: {curr_filtered_df.shape[0]} x {curr_filtered_df.shape[1]}**")
+        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(curr_filtered_df), file_name=f"{st.session_state.select_df}", mime='text/csv')
+        st.subheader("**Console Log**", anchor = False)
+        st.markdown(f'{log}')
 
-if authentication_status == False:
-    st.error("**🚨 Username/password is incorrect**")
+with main_tabs[1]:
+    st.write("")
+    if st.session_state.select_df:
+        stats = curr_filtered_df.describe().copy().T
+        stats['Unique'] = curr_filtered_df.apply(lambda x: len(x.unique()))
+        st.dataframe(stats, use_container_width = True, hide_index = False)
+        st.markdown(f"**DataFrame Shape: {curr_filtered_df.shape[0]} x {curr_filtered_df.shape[1]}**")
+        st.download_button(label="**Download Statistics DataFrame as CSV**", data = convert_df(stats), file_name=f"stats_{st.session_state.select_df}", mime='text/csv')
 
-if authentication_status is None:
-    st.warning("**⚠️ Please enter your username and password**")
+with main_tabs[2]:
+    st.write("")
+    grapher_tabs = st.tabs(["**Scatter**", "**Line**", "**Bar**", "**Histogram**", "**Box**", "**Violin**", "**Scatter 3D**", "**Heatmap**", "**Contour**", "**Pie**", "**Splom**", "**Candlestick**", "**Word Cloud**"])
+    if st.session_state.select_df:
+        with grapher_tabs[0]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = selectbox('**Select y value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_1', no_selection_label = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_2', no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_3', no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_4', no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_5', no_selection_label = None)
+                symbol = selectbox('**Select symbol value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_6', no_selection_label = None)
+                size = selectbox('**Select size value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_1_7', no_selection_label = None)
+                trendline = selectbox('**Select trendline**', ['ols', 'lowess'], key = 'grid_grapher_1_8', no_selection_label = None)
+                marginal_x = selectbox('**Select marginal x**', ['histogram', 'rug', 'box', 'violin'], key = 'grid_grapher_1_9', no_selection_label = None)
+                marginal_y = selectbox('**Select marginal y**', ['histogram', 'rug', 'box', 'violin'], key = 'grid_grapher_1_10', no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.scatter(data_frame = curr_filtered_df, x = x, y = y, color = color, symbol = symbol, size = size, trendline = trendline, marginal_x = marginal_x, marginal_y = marginal_y, facet_row = facet_row, facet_col = facet_col, height = 750, render_mode='auto', color_continuous_scale = px.colors.sequential.Plasma)
+                        fig.update_layout(coloraxis = fig.layout.coloraxis)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.scatter(height = 750, render_mode='auto'), use_container_width = True)
+                    log = ''
+                except Exception as e:
+                    st.plotly_chart(px.scatter(height = 750, render_mode='auto'), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-if authentication_status:
-    @st.cache_data
-    def convert_df(df, index = False):
-        return df.to_csv(index = index).encode('utf-8')
+        with grapher_tabs[1]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = st.multiselect('**Select y values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_2_1', default = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_2_2',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_2_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_2_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_2_5',no_selection_label = None)
+                aggregation = selectbox('**Select aggregation**', ['mean', 'median', 'min', 'max', 'sum'], key = 'grid_grapher_2_6',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    line_plot_df = curr_filtered_df.copy()
+                    key_cols_line = [val for val in [x, color, facet_row, facet_col] if val is not None]
+                    if key_cols_line != []:
+                        if aggregation is not None:
+                            line_plot_df = curr_filtered_df.groupby(key_cols_line).agg(aggregation).reset_index()
+                        else:
+                            line_plot_df = curr_filtered_df.sort_values(key_cols_line)
+                    if y:
+                        fig = px.line(data_frame = line_plot_df, x = x, y = y, color = color, facet_row = facet_row, facet_col = facet_col, render_mode='auto', height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        fig.update_traces(connectgaps=True)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.line(height = 750, render_mode='auto'), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.line(height = 750, render_mode='auto'), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    def submit():
-        st.session_state.occupancy = st.session_state.widget
-        st.session_state.widget = ''
+        with grapher_tabs[2]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = st.multiselect('**Select y values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_3_1', default = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_3_2',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_3_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_3_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_3_5',no_selection_label = None)
+                aggregation = selectbox('**Select aggregation**', ['mean', 'median', 'min', 'max', 'sum'], key = 'grid_grapher_3_6',no_selection_label = None)
+                sort = selectbox('**Select sort type**', ['asc', 'desc'], key = 'grid_grapher_3_7',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    bar_plot_df = curr_filtered_df.copy()
+                    key_cols_bar = [val for val in [x, color, facet_row, facet_col] if val is not None]
+                    if key_cols_bar != []:
+                        if aggregation is not None:
+                            bar_plot_df = curr_filtered_df.groupby(key_cols_bar).agg(aggregation).reset_index()
+                        else:
+                            bar_plot_df = curr_filtered_df.sort_values(key_cols_bar)
+                    if sort is not None:
+                        if sort == 'asc':
+                            bar_plot_df = bar_plot_df.sort_values(y, ascending=True)
+                        else:
+                            bar_plot_df = bar_plot_df.sort_values(y, ascending=False)
+                    if y:
+                        fig = px.bar(data_frame = bar_plot_df, x = x, y = y, color = color, facet_row = facet_row, facet_col = facet_col, height = 750, color_continuous_scale = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    def update():
-        tmp = st.session_state.editeddf['edited_rows']
-        for i in tmp:
-            for j in tmp[i]:
-                edited_df.loc[i][j] = tmp[i][j]
-            edited_df.loc[i]['Last Modified'] = datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
-            edited_df.loc[i]['Date'] = datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
+        with grapher_tabs[3]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                x = st.multiselect('**Select x values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_4_1', default = None)
+                color = selectbox('**Select color values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_4_2',no_selection_label = None)
+                facet_row = selectbox('**Select facet row values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_4_3',no_selection_label = None)
+                facet_col = selectbox('**Select facet col values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_4_4',no_selection_label = None)
+                marginal = selectbox('**Select marginal**', ['rug', 'box', 'violin'], key = 'grid_grapher_4_5', no_selection_label = None)
+                cumulative = st.checkbox('Cumulative ?', key = 'grid_grapher_4_6')
+            with grid_grapher.container():
+                try:
+                    if x:
+                        fig = px.histogram(data_frame = curr_filtered_df, x = x, color = color, facet_row = facet_row, facet_col = facet_col, marginal = marginal, cumulative = cumulative, height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    my_grid = grid([15, 1], vertical_align="top")
-    with my_grid.container():
-        st.header(f":red[Welcome] {name}", anchor = False)
-    with my_grid.container():
-        authenticator.logout("Logout", "main")
+        with grapher_tabs[4]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = st.multiselect('**Select y values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_5_1', default = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_5_2',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_5_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_5_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_5_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.box(data_frame = curr_filtered_df, x = x, y = y, color = color, facet_row = facet_row, facet_col = facet_col, height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.box(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.box(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    st.markdown('''
-        **🡥 Redirect to 📋[Pandas DataFrame Viewer](https://pandas-dataframe-viewer-plotter.streamlit.app/) to visualize data with AI**
-                ''')
-    
-    # tab1, tab2, tab3, tab4 = st.tabs(["👨‍👩‍👧‍👦 Occupancy Collection", "🔗 Merge Occupancy with Sensor data", "👀 View / Edit CSV file", "🔗 Concat multiple CSVs"])
-    
-    tab1, tab2, tab3 = st.tabs(["👨‍👩‍👧‍👦 Occupancy Collection", "🔗 Merge Occupancy with Sensor data", "📩 Send file using Mail"])
+        with grapher_tabs[5]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = st.multiselect('**Select y values**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_6_1', default = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_6_2',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_6_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_6_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_6_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.violin(data_frame = curr_filtered_df, x = x, y = y, color = color, facet_row = facet_row, facet_col = facet_col, height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.violin(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.violin(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    if 'df' not in st.session_state:
-        st.session_state['df'] = pd.DataFrame(columns = ['Time Entered', 'Last Modified', 'Occupancy', 'Position'])
+        with grapher_tabs[6]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = selectbox('**Select y value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_7_1', no_selection_label = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_7_2',no_selection_label = None)
+                z = selectbox('**Select z value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_7_3',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_7_4',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.scatter_3d(data_frame = curr_filtered_df, x = x, y = y, z = z, color = color, height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    if 'view_edit_df' not in st.session_state:
-        st.session_state['view_edit_df'] = pd.DataFrame()
-    
-    if 'occupancy' not in st.session_state:
-        st.session_state['occupancy'] = ''
+        with grapher_tabs[7]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = selectbox('**Select y value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_8_1', no_selection_label = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_8_2',no_selection_label = None)
+                z = selectbox('**Select z value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_8_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_8_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_8_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.density_heatmap(data_frame = curr_filtered_df, x = x, y = y, z = z, facet_row = facet_row, facet_col = facet_col, height = 750, color_continuous_scale = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.density_heatmap(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.density_heatmap(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
-    if 'widget' not in st.session_state:
-        st.session_state['widget'] = ''
-    
-    with tab1.container():
-        my_grid = grid([3, 2], vertical_align="bottom")
-        position = my_grid.text_input('**Enter current Position**', placeholder = 'Enter Position')
-        my_grid.text_input('**Enter current Occupancy**', key='widget', placeholder = 'Enter Occupancy', on_change=submit)
-        if st.session_state.occupancy and position:
-            st.session_state.df.loc[st.session_state.df.shape[0]] = [datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S"), datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S"), st.session_state.occupancy, position.lower()]
-            st.session_state.occupancy = ''
-        edited_df = st.data_editor(st.session_state.df, num_rows="fixed", key = 'editeddf', on_change = update, hide_index = True, use_container_width = True, disabled=['Last Modified'])
-        st.session_state.df = edited_df
-        # col_inner = col[0].columns(2)
-        # with col_inner[0].container():
-        #     position = col_inner[0].text_input('**Enter current Position**', placeholder = 'Enter Position')
-        # if position:
-        #     with col_inner[0].container():
-        #         col_inner[0].text_input('**Enter current Occupancy**', key='widget', placeholder = 'Enter Occupancy', on_change=submit_3)
-        #     if st.session_state.occupancy and position:
-        #         st.session_state.df.loc[st.session_state.df.shape[0]] = [datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S"), datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S"), st.session_state.occupancy, position.lower()]
-        #         st.session_state.occupancy = ''
-        # edited_df = col[0].data_editor(st.session_state.df, num_rows="fixed", key = 'editeddf', on_change = update, hide_index = True, use_container_width = True, disabled=['Last Modified'])
-        # st.session_state.df = edited_df
-    
-        st.caption('**:red[Note:] Only Time Entered and Occupancy can be modified.**')
-    
-        disabled = True
-        if st.session_state.df.shape[0]:
-            disabled = False
-        st.download_button(label="**Download data as CSV**", data = convert_df(st.session_state.df), file_name=f'Occupancy_{datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d_%H:%M:%S")}.csv', mime='text/csv', disabled = disabled)
-    
-    with tab2.container():
-        disabled = True
-        merged_df = pd.DataFrame()
-        col = st.columns(2)
-        with col[0].container():
-            sensor_file = st.file_uploader("**Choose Sensor CSV file**", type = "csv")
-        with col[1].container():
-            occupancy_file = st.file_uploader("**Choose Occupancy CSV file**", type = "csv")
-        if sensor_file is not None and occupancy_file is not None:
+        with grapher_tabs[8]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                y = selectbox('**Select y value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_9_1', no_selection_label = None)
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_9_2',no_selection_label = None)
+                z = selectbox('**Select z value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_9_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_9_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_9_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if y:
+                        fig = px.density_contour(data_frame = curr_filtered_df, x = x, y = y, color = z, facet_row = facet_row, facet_col = facet_col, height = 750)
+                        fig.update_traces(contours_coloring = 'fill', contours_showlabels = True, colorscale = 'Plasma')
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.density_contour(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.density_contour(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with grapher_tabs[9]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                name = selectbox('**Select name value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_10_1', no_selection_label = None)
+                value = selectbox("**Select value's value**", curr_filtered_df.columns.to_list(), key = 'grid_grapher_10_2',no_selection_label = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_10_3',no_selection_label = None)
+                facet_row = selectbox('**Select facet row value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_10_4',no_selection_label = None)
+                facet_col = selectbox('**Select facet col value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_10_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if name:
+                        # if facet_row is not None or facet_col is not None:
+                        #     raise NotImplementedError
+                        fig = px.pie(data_frame = curr_filtered_df, names = name, values = value, color = color, facet_row = facet_row, facet_col = facet_col, height = 750, color_discrete_sequence = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.pie(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.pie(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with grapher_tabs[10]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                dimensions = st.multiselect('**Select dimensions value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_11_1', default = None)
+                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_11_2',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if dimensions or color:
+                        fig = px.scatter_matrix(data_frame = curr_filtered_df, dimensions = dimensions, color = color, height = 750, color_continuous_scale = px.colors.sequential.Plasma)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with grapher_tabs[11]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                x = selectbox('**Select x value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_12_1', no_selection_label = None)
+                open = selectbox('**Select open value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_12_2',no_selection_label = None)
+                high = selectbox('**Select high value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_12_3',no_selection_label = None)
+                low = selectbox('**Select low value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_12_4',no_selection_label = None)
+                close = selectbox('**Select close value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_12_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if x and open and high and low and close:
+                        fig = go.Figure(data=[go.Candlestick(x = curr_filtered_df[x], open = curr_filtered_df[open], high = curr_filtered_df[high], low = curr_filtered_df[low], close = curr_filtered_df[close])])
+                        fig.update_layout(height=750)
+                        st.plotly_chart(fig, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.density_contour(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.density_contour(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with grapher_tabs[12]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                words = st.multiselect('**Select words value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_13_1', default = None)
+            with grid_grapher.container():
+                try:
+                    if words:
+                        if type(words) == str:
+                            words = [words]
+                        text = ' '.join(pd.concat([curr_filtered_df[x].dropna().astype(str) for x in words]))
+                        wc = WordCloud(scale=2, collocations=False).generate(text)
+                        st.plotly_chart(px.imshow(wc, color_continuous_scale = px.colors.sequential.Plasma), height = 750, use_container_width = True)
+                    else:
+                        st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                except Exception as e:
+                    st.plotly_chart(px.bar(height = 750), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+with main_tabs[3]:
+    st.write("")
+    reshaper_tabs = st.tabs(["**Pivot**", "**Melt**", "**Merge**", "**Concat**", "**Join**"])
+    if st.session_state.select_df:  
+        with reshaper_tabs[0]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                index = st.multiselect('**Select index value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_1', default = None)
+                column = st.multiselect('**Select column value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_2',default = None)
+                value = st.multiselect("**Select value's value**", curr_filtered_df.columns.to_list(), key = 'grid_reshaper_1_3',default = None)
+                aggfunc = st.selectbox('**Select aggfunc**', ['count','mean', 'median','mode','min','max','sum'], key = 'grid_reshaper_1_4', index = 1)
+            with grid_grapher.container():
+                try:
+                    if index or column:
+                        tmp = curr_filtered_df.pivot_table(index = index, columns = column, values = value, aggfunc = aggfunc).copy()
+                        st.dataframe(tmp, height = 750, use_container_width = True)
+                        st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+                        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Pivot_{st.session_state.select_df}", mime='text/csv')
+                    else:
+                        st.dataframe(pd.DataFrame(), use_container_width = True)
+                except Exception as e:
+                    st.dataframe(pd.DataFrame(), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with reshaper_tabs[1]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                id_vars = st.multiselect('**Select id_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_1', default = None)
+                value_vars = st.multiselect('**Select value_vars value**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_2_2', default = None)
+            with grid_grapher.container():
+                try:
+                    if id_vars or value_vars:
+                        tmp = curr_filtered_df.melt(id_vars = id_vars, value_vars = value_vars)
+                        st.dataframe(tmp, height = 750, use_container_width = True)
+                        st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+                        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Melt_{st.session_state.select_df}", mime='text/csv')
+                    else:
+                        st.dataframe(pd.DataFrame(), use_container_width = True)
+                except Exception as e:
+                    st.dataframe(pd.DataFrame(), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with reshaper_tabs[2]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            other_dataframe = pd.DataFrame()
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_3_1', no_selection_label = None)
+                if other:
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
+                how = st.selectbox('**Select how**', ['inner', 'left', 'right', 'outer'], key = 'grid_reshaper_3_2', index = 0)
+                left_on = st.multiselect('**Select left on values**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_3_3',default = None)
+                right_on = st.multiselect('**Select right on values (Other DataFrame)**', other_dataframe.columns.to_list(), key = 'grid_reshaper_3_4',default = None)
+                validate = selectbox('**Select validate**', ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many'], key = 'grid_reshaper_3_5',no_selection_label = None)
+            with grid_grapher.container():
+                try:
+                    if not(other_dataframe.empty) and left_on and right_on:
+                        tmp = curr_filtered_df.merge(right = other_dataframe, how = how, left_on = left_on, right_on = right_on, validate = validate)
+                        st.dataframe(tmp, height = 750, use_container_width = True)
+                        st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+                        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Merged_{st.session_state.select_df}", mime='text/csv')
+                    else:
+                        st.dataframe(pd.DataFrame(), use_container_width = True)
+                except Exception as e:
+                    st.dataframe(pd.DataFrame(), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with reshaper_tabs[3]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            other_dataframe = pd.DataFrame()
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_4_1', no_selection_label = None)
+                if other:
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
+                axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
+                ignore_index = st.checkbox('Ignore Index ?', key = 'grid_reshaper_4_3')
+            with grid_grapher.container():
+                try:
+                    if not(other_dataframe.empty):
+                        tmp = pd.concat([curr_filtered_df, other_dataframe], axis = int(axis[0]), ignore_index = ignore_index)
+                        st.dataframe(tmp, height = 750, use_container_width = True)
+                        st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+                        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Concat_{st.session_state.select_df}", mime='text/csv')
+                    else:
+                        st.dataframe(pd.DataFrame(), use_container_width = True)
+                except Exception as e:
+                    st.dataframe(pd.DataFrame(), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+        with reshaper_tabs[4]:
+            grid_grapher = grid([1, 2], vertical_align="bottom")
+            other_dataframe = pd.DataFrame()
+            with grid_grapher.expander(label = 'Features', expanded = True):
+                other = selectbox("Select other Dataframe", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_5_1', no_selection_label = None)
+                if other:
+                    other_dataframe = st.session_state.files[st.session_state.file_name[other]].drop('Row_Number_', axis = 1)
+                how = st.selectbox('**Select how**', ['inner', 'left', 'right', 'outer'], key = 'grid_reshaper_5_2', index = 0)
+                on = selectbox('**Select on values**', curr_filtered_df.columns.to_list(), key = 'grid_reshaper_5_3', no_selection_label = None)
+                lsuffix = st.text_input("**Suffix to use from left frame's overlapping columns**", placeholder = "Enter lsuffix", key = 'grid_reshaper_5_4')
+                rsuffix = st.text_input("**Suffix to use from right frame's overlapping columns**", placeholder = "Enter rsuffix", key = 'grid_reshaper_5_5')
+                sort = st.checkbox('Sort ?', key = 'grid_reshaper_5_6')
+
+            with grid_grapher.container():
+                try:
+                    if not(other_dataframe.empty):
+                        tmp = curr_filtered_df.join(other_dataframe, how = how, on = on, lsuffix = lsuffix, rsuffix = rsuffix, sort = sort)
+                        st.dataframe(tmp, height = 750, use_container_width = True)
+                        st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+                        st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Join_{st.session_state.select_df}", mime='text/csv')
+                    else:
+                        st.dataframe(pd.DataFrame(), use_container_width = True)
+                except Exception as e:
+                    st.dataframe(pd.DataFrame(), use_container_width = True)
+                    log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
+
+with main_tabs[4]:
+    if st.session_state.select_df:
+        st.markdown("**Are you sure of proceeding to PygWalker interface?**")
+        try:
+            if st.button("Continue", key = 'PygWalker'):
+                pyg.walk(curr_filtered_df, env = 'Streamlit', dark = 'media')
+        except Exception as e:
+            st.dataframe(pd.DataFrame(), use_container_width = True)
+            log = traceback.format_exc()
+        st.subheader("**Console Log**", anchor = False)
+        st.markdown(f'{log}')
+
+
+with main_tabs[5]:
+    if st.session_state.select_df:
+        preference_ai = st.radio("**Select your Preference**", options = ["**Ask about the selected Dataframe**", "**Ask how to perform actions on selected Dataframe**"], horizontal = True)
+        prompt = st.text_area("Enter Promt", placeholder = "Enter your promt", label_visibility="collapsed")
+        proceed_ai = st.button("Continue", key = 'ask_ai')
+        with st.expander("**AI says**", expanded = True):
             st.divider()
-            option1 = st.radio("**Choose Occupancy Collection Type**", ('Direct', 'Cummulative'), horizontal = True)
-            option2 = st.radio("**Keep Zeros ?**", ('No', 'Yes'), horizontal = True)
             try:
-                sensor_data = pd.read_csv(sensor_file, parse_dates=[['Date', 'Time']]).dropna(how='all', axis='columns')
-                occupancy_data = pd.read_csv(occupancy_file, usecols = ['Time Entered', 'Occupancy', 'Position']).dropna(how='all', axis='columns')
-                sensor_data.rename({"Date_Time": "Timestamp"}, axis = 1, inplace = True)
-                sensor_data.set_index("Timestamp", drop = True, inplace = True)
-                occupancy_data['Time Entered'] = pd.to_datetime(occupancy_data['Time Entered'])
-                occupancy_data.rename({'Time Entered': 'Timestamp'}, axis = 1, inplace = True)
-                occupancy_data.set_index('Timestamp', drop = True, inplace = True)
-                # occupancy_data = occupancy_data.asfreq(freq='S', method = 'ffill', fill_value = 0)
-                if option1 == "Cummulative":
-                    occupancy_data['Occupancy'] = occupancy_data['Occupancy'].cumsum()
-                merged_df = sensor_data.join(occupancy_data, how = "outer")
-                merged_df.reset_index(inplace = True)
-                merged_df['Occupancy'].fillna(method="ffill", inplace = True)
-                merged_df['Position'].fillna(method="ffill", inplace = True)
-                merged_df.dropna(how = 'any', inplace = True)
-                if option2 == 'No':
-                    merged_df['Occupancy'].replace(to_replace=0, method='ffill', inplace=True)
-                    merged_df = merged_df[merged_df['Occupancy'] != 0].reset_index(drop = True)
-                disabled = False
-            except:
-                st.error('**Error in CSV files, please check the columns name are identical to the requirement and re upload again**', icon="🚨")
-                disabled = True
-
-        st.download_button(label = "**Download Merged CSV file**", data = convert_df(merged_df, index = False), file_name=f'Sensor_data_with_Occupancy_{datetime.now(timezone("Asia/Kolkata")).strftime("%Y-%m-%d_%H:%M:%S")}.csv', mime='text/csv', disabled = disabled)
-        st.caption('**:red[Note:] If timestamp range matches in both csv, then only it will be merged.**')
-
-    with tab3.container():
-        def local_css(file_name):
-            with open(file_name) as f:
-                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-        
-        tab3_col = st.columns(2)
-        with tab3_col[0]:
-            if st.checkbox("**Send to other mail id**"):
-                mail_id = st.text_input("**Enter mail id**", placeholder = "Enter the Mail ID", label_visibility = "collapsed")
-            else:
-                mail_id = selectbox("**Select the mail id from the below Authorised users**", options = st.session_state['authorization_df']['username'].to_list(), no_selection_label = None)
-            if mail_id:
-                contact_form = f"""
-                    <form method="POST" action="https://formsubmit.co/{mail_id}" enctype="multipart/form-data">
-                    <input type="hidden" name="_captcha" value="false">
-                    <textarea name="message" placeholder="Any Comments"></textarea>
-                    <input type="file" name="attachment" multiple = "multiple">
-                    <button type="submit">Send</button>
-                    </form>
-                    """
-                st.markdown(contact_form, unsafe_allow_html = True)
-                local_css("style/style.css")
-
-    # with tab3.container():
-    #     def reset():
-    #         st.session_state.view_edit_df = pd.DataFrame()
-        
-    #     view_csv_file = st.file_uploader("**Choose CSV file**", type = "csv", on_change = reset)
-    #     if view_csv_file:
-    #         if st.button("**Import / Re-Import CSV / Reset Filters, Slicers**"):
-    #             st.session_state.view_edit_df = pd.read_csv(view_csv_file).dropna(how='all', axis='columns')
-    #         tab3_3 = st.tabs(['**View**', '**Edit**'])
-    #         with tab3_3[0].container():
-    #             filtered_df = dataframe_explorer(st.session_state.view_edit_df, case=False).reset_index(drop = True)
-    #             st.caption(f"**:red[Note:] Filters have no effect on slicers**")
-    #             if st.button('Refresh Data'):
-    #                 pass
-    #             st.dataframe(filtered_df, use_container_width=True)
-    #             st.caption(f"**:red[Current Row range -] [{0 if filtered_df.shape[0] else -1} : {filtered_df.shape[0] - 1}], :red[Current Column range -] [{0 if filtered_df.shape[1] else -1} : {filtered_df.shape[1] - 1}]**")
-    #             store_col = {}
-    #             for col in range(0, filtered_df.shape[1]):
-    #                 store_col[filtered_df.columns[col]] = col
-    #             st.json({"Column index info": store_col}, expanded = False)
-    #             edited_file_name = st.columns(2)[0].text_input("**Enter edited csv file name**", key = 'tab3_3_0', placeholder = 'Enter file name')
-    #             if edited_file_name:
-    #                 st.download_button(label = "**Download Edited CSV file**", data = convert_df(filtered_df, index = False), file_name = f'{edited_file_name}.csv', mime='text/csv')
-    #         with tab3_3[1].container():
-    #             my_grid = grid([2, 2, 1.5, 1.5, 1], vertical_align="bottom")
-    #             try:
-    #                 option2 = my_grid.selectbox(label = "**Slicing Type**", options = ('Row Slicing', 'Column Slicing'), index = 0, label_visibility = 'visible')
-    #                 option3 = my_grid.selectbox(label = "**Operation**", options = ('Keep', 'Remove'), label_visibility = 'visible')
-    #                 slicing_input = st.columns(6)
-    #                 start = my_grid.text_input("**Enter starting index**")
-    #                 end = my_grid.text_input("**Enter ending index**")
-    #                 proceed_3 = my_grid.button("**Continue**", use_container_width = 1)
-    #                 if option2 == 'Row Slicing':
-    #                     if start and end and proceed_3:
-    #                         start = int(start)
-    #                         end = int(end) + 1
-    #                         if 0 <= start <= end <= st.session_state.view_edit_df.shape[0]:
-    #                             if option3 == 'Keep':
-    #                                 st.session_state.view_edit_df = st.session_state.view_edit_df.iloc[start: end].reset_index(drop = True)
-    #                             else:
-    #                                 st.session_state.view_edit_df = st.session_state.view_edit_df.drop(st.session_state.view_edit_df.iloc[start: end].index).reset_index(drop = True)
-    #                         else:
-    #                             if st.session_state.view_edit_df.shape[0] == 0:
-    #                                 st.warning(f"**⚠️ Rows are empty**")
-    #                             else:
-    #                                 st.warning(f"**⚠️ Row's range slicing going out of bounds. Please select between [{0} : {st.session_state.view_edit_df.shape[0] - 1}]**")
-    #                 else:
-    #                     if start and end and proceed_3:
-    #                         start = int(start)
-    #                         end = int(end) + 1
-    #                         if 0 <= start <= end <= st.session_state.view_edit_df.shape[1]:
-    #                             if option3 == 'Keep':
-    #                                 st.session_state.view_edit_df = st.session_state.view_edit_df[st.session_state.view_edit_df.columns[start: end]]
-    #                             else:
-    #                                 st.session_state.view_edit_df = st.session_state.view_edit_df.drop(st.session_state.view_edit_df.columns[start: end], axis = 1)
-    #                         else:
-    #                             if st.session_state.view_edit_df.shape[0] == 0:
-    #                                 st.warning(f"**⚠️ Columns are empty**")
-    #                             else:
-    #                                 st.warning(f"**⚠️ Column's range slicing going out of bounds. Please select between [{0 if st.session_state.view_edit_df.shape[1] else -1} : {st.session_state.view_edit_df.shape[1] - 1}]**")                    
-    #                 st.data_editor(st.session_state.view_edit_df, use_container_width = True, num_rows="fixed", hide_index = False, key=None, on_change=None)
-    #             except Exception as e:
-    #                 print(e)
-    #                 st.error('**Error, please check the slicing values**', icon="🚨")
-    #             st.caption("**:red[Note:] Make sure the slicing values are in range of the CSV file. Index Column cannot be removed**")
-    #             st.caption(f"**:red[Current Row range -] [{0 if st.session_state.view_edit_df.shape[0] else -1} : {st.session_state.view_edit_df.shape[0] - 1}], :red[Current Column range -] [{0 if st.session_state.view_edit_df.shape[1] else -1} : {st.session_state.view_edit_df.shape[1] - 1}]**")
-    #             store_col = {}
-    #             for col in range(0, st.session_state.view_edit_df.shape[1]):
-    #                 store_col[st.session_state.view_edit_df.columns[col]] = col
-    #             st.json({"Column index info": store_col}, expanded = False)
-    #             edited_file_name = st.columns(2)[0].text_input("**Enter edited csv file name**", key = 'tab3_3_1', placeholder = 'Enter file name')
-    #             if edited_file_name:
-    #                 st.download_button(label = "**Download Edited CSV file**", data = convert_df(st.session_state.view_edit_df, index = False), file_name = f'{edited_file_name}.csv', mime='text/csv')
-    #     else:
-    #         st.warning("**⚠️ Select a CSV**")
-
-    # with tab4.container():
-    #     concat_csvs = st.file_uploader("**Choose CSV files**", type = "csv", accept_multiple_files = True)
-    #     st.caption('**:red[Note:] In the view above, lowest csv file data will be at top in merged csv file.**')
-    #     if len(concat_csvs) < 2:
-    #         st.warning("**⚠️ Select at least 2 CSV's. Make sure the CSV's have similar column name at similar positions, or null values will be inplaced**")
-    #     else:
-    #         for i in range(0, len(concat_csvs)):
-    #             concat_csvs[i] = pd.read_csv(concat_csvs[i])
-    #         merged_file_name = st.columns(2)[0].text_input("**Enter merged csv file name**", placeholder = 'Enter file name')
-    #         if merged_file_name:
-    #             st.download_button(label="**Download Merged CSV file**", data = convert_df(pd.concat(concat_csvs, ignore_index = True)), file_name=f'{merged_file_name}.csv', mime='text/csv')
-        
-    # if tab4:            
-    #     with tab4.container():
-    #         col = st.columns(2)
-    #         with col[0].container():
-    #             col[0].subheader("Add Users", anchor= False)
-    #             add_remove_users = col[0].radio("Operation:", ('Add', 'Remove'), horizontal = True)
-    #             if add_remove_users == 'Add':
-    #                 user_add_1 = col[0].text_input("**Enter Username**", key = 'user_add_1', placeholder="Enter Username")
-    #                 user_add_2 = col[0].text_input("**Enter Name**", placeholder="Enter Name")
-    #                 user_add_3 = col[0].text_input("**Enter Password**", type = 'password', placeholder="Enter Password")
-    #                 proceed1 = col[0].button(label = "Continue", key = 'proceed1')
-    #                 if user_add_1 and user_add_2 and user_add_3 and proceed1:
-    #                     tmp = st.session_state.authorization_df[st.session_state.authorization_df['username'] == user_add_1]
-    #                     if tmp.shape[0]:
-    #                         col[0].warning(f"**{user_add_1} is already an User**")
-    #                     else:
-    #                         st.session_state.authorization_df.loc[-1] = [user_add_2, user_add_1, stauth.Hasher([user_add_3]).generate()[0], 0]
-    #                         st.session_state.authorization_df.reset_index(inplace = True, drop = True)
-    #                         col[0].success(f"**{user_add_1} added as User**")
-    #                 st.session_state.authorization_df.to_csv('Authentication.csv', index = False)
-    #             else:
-    #                 user_del_1 = col[0].text_input("**Enter Username**", key = 'user_del_1', placeholder="Enter Username")
-    #                 proceed2 = col[0].button(label = "Continue", key = 'proceed2')
-    #                 if user_del_1 and proceed2:
-    #                     tmp = st.session_state.authorization_df[st.session_state.authorization_df['username'] == user_del_1]
-    #                     if tmp.shape[0]:
-    #                         st.session_state.authorization_df = st.session_state.authorization_df[st.session_state.authorization_df['username'] != user_del_1]
-    #                         st.session_state.authorization_df.reset_index(drop = True, inplace = True)
-    #                         col[0].success(f"**{user_del_1} deleted as User**")
-    #                     else:
-    #                         col[0].error(f"**{user_del_1} not a User**")
-    #                 st.session_state.authorization_df.to_csv('Authentication.csv', index = False)
-
-            # with col[1].container():
-            #     col[1].subheader("Add/Remove Admins", anchor= False)
-            #     col[1].text_input("**Enter Username who is authorized**", key = 'admin_add_remove', on_change = submit_3, placeholder="Enter Username")
-            #     add_remove_admin_radio = col[1].radio("Operation:", ('Add', 'Remove'), horizontal = True)
-            #     proceed2 = col[1].button(label = "Continue", key = 'proceed2')
-            #     if add_remove_admin_radio == 'Add':
-            #         if st.session_state.admin_add_remove and proceed2:
-            #             tmp = st.session_state.authorization_df[st.session_state.authorization_df['username'] == st.session_state.admin_add_remove]
-            #             if tmp.shape[1] and tmp['admin'].item():
-            #                 col[1].warning(f"**{st.session_state.admin_add_remove} is already an Admin**")
-            #             elif tmp.shape[1] and tmp['admin'].item() == 0:
-            #                 st.session_state.authorization_df.loc[st.session_state.authorization_df['username'] == st.session_state.admin_add_remove, 'admin'] = 1
-            #                 col[1].success(f"**{st.session_state.admin_add_remove} promoted to Admin**")
-            #             else:
-            #                 col[1].error(f"**{st.session_state.admin_add_remove} not Authorized**")
-            #         st.session_state.authorization_df.to_csv('Authentication.csv', index = False)
-            #     else:
-            #         if st.session_state.admin_add_remove and proceed2:
-            #             tmp = st.session_state.authorization_df[st.session_state.authorization_df['username'] == st.session_state.admin_add_remove]
-            #             if tmp.shape[1] and tmp['admin'].item() == 0:
-            #                 col[1].warning(f"**{st.session_state.admin_add_remove} is not an Admin**")
-            #             elif tmp.shape[1] and tmp['admin'].item():
-            #                 st.session_state.authorization_df.loc[st.session_state.authorization_df['username'] == st.session_state.admin_add_remove, 'admin'] = 0
-            #                 col[1].success(f"**{st.session_state.admin_add_remove} demoted to User**")
-            #             else:
-            #                 col[1].error(f"**{st.session_state.admin_add_remove} not Authorized**")
-            #         st.session_state.authorization_df.to_csv('Authentication.csv', index = False)
+                if preference_ai == "**Ask about the selected Dataframe**" and prompt and proceed_ai:
+                    st.markdown(curr_filtered_df.sketch.ask(prompt, call_display=False))
+                elif preference_ai == "**Ask how to perform actions on selected Dataframe**" and prompt and proceed_ai:
+                    st.markdown(curr_filtered_df.sketch.howto(prompt, call_display=False))
+            except Exception as e:
+                st.dataframe(pd.DataFrame(), use_container_width = True)
+                log = traceback.format_exc()
+        st.subheader("**Console Log**", anchor = False)
+        st.markdown(f'{log}')
