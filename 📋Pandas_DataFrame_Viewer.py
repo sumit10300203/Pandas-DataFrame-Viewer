@@ -345,12 +345,15 @@ with main_tabs[2]:
             grid_grapher = grid([1, 2], vertical_align="bottom")
             with grid_grapher.expander(label = 'Features', expanded = True):
                 dimensions = st.multiselect('**Select dimensions value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_11_1', default = None)
-                color = selectbox('**Select color value**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_11_2',no_selection_label = None)
-                plot_color = st.selectbox("**Select Plot Color Map**", colorscales.keys(), index = 0, key = 'grid_grapher_11_3')
+                color = selectbox('**Select color value (Column should be included as one of the dimension value)**', curr_filtered_df.columns.to_list(), key = 'grid_grapher_11_2',no_selection_label = None)
+                diag = st.selectbox("**Select Diagonal Plot**", ['scatter', 'histogram', 'box'], index = 1, key = 'grid_grapher_11_3')
+                plot_color = st.selectbox("**Select Plot Color Map**", ['Greys', 'YlGnBu', 'Greens', 'YlOrRd', 'Bluered', 'RdBu', 'Reds', 'Blues', 'Picnic', 'Rainbow', 'Portland', 'Jet', 'Hot', 'Blackbody', 'Earth', 'Electric', 'Viridis', 'Cividis'], index = 0, key = 'grid_grapher_11_4')
+            
             with grid_grapher.container():
                 try:
-                    if dimensions or color:
-                        fig = px.scatter_matrix(data_frame = curr_filtered_df, dimensions = dimensions, color = color, height = 750, color_continuous_scale = colorscales[plot_color])
+                    if dimensions:
+                        # fig = px.scatter_matrix(data_frame = curr_filtered_df, dimensions = dimensions, color = color, height = 750, color_continuous_scale = colorscales[plot_color])
+                        fig = ff.create_scatterplotmatrix(curr_filtered_df[dimensions], diag = diag, title = "", index = color, colormap = plot_color, height = 750)
                         st.plotly_chart(fig, use_container_width = True)
                     else:
                         st.plotly_chart(px.bar(height = 750), use_container_width = True)
