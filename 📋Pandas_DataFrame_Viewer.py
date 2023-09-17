@@ -479,28 +479,28 @@ with main_tabs[3]:
             st.markdown(f'{log}')
 
         with reshaper_tabs[3]:
-		grid_grapher = grid([1, 2], vertical_align="bottom")
-		other_dataframe = []
-		with grid_grapher.expander(label = 'Features', expanded = True):
-			other = st.multiselect("**Select other Dataframe**", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_4_1', default = None)
-			if other:
-				other_dataframe = [st.session_state.files[st.session_state.file_name[df]].drop('Row_Number_', axis = 1) for df in other]
-			axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
-			ignore_index = st.checkbox('Ignore Index ?', key = 'grid_reshaper_4_3')
-		with grid_grapher.container():
-			try:
-				if other_dataframe:
-					tmp = pd.concat([curr_filtered_df] + other_dataframe, axis = int(axis[0]), ignore_index = ignore_index)
-					st.dataframe(tmp, height = 750, use_container_width = True)
-					st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
-					st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Concat_{st.session_state.select_df}", mime='text/csv')
-				else:
-					st.dataframe(pd.DataFrame(), use_container_width = True)
-			except Exception as e:
-				st.dataframe(pd.DataFrame(), use_container_width = True)
-				log = traceback.format_exc()
-            	st.subheader("**Console Log**", anchor = False)
-            	st.markdown(f'{log}')
+	    grid_grapher = grid([1, 2], vertical_align="bottom")
+	    other_dataframe = []
+	    with grid_grapher.expander(label = 'Features', expanded = True):
+	        other = st.multiselect("**Select other Dataframe**", list(filter(lambda x: x != st.session_state.select_df, st.session_state.file_name.keys())), key = 'grid_reshaper_4_1', default = None)
+		if other:
+		    other_dataframe = [st.session_state.files[st.session_state.file_name[df]].drop('Row_Number_', axis = 1) for df in other]
+		axis = st.selectbox('**Select axis**', ['0 (rows)', '1 (columns)'], key = 'grid_reshaper_4_2')
+		ignore_index = st.checkbox('Ignore Index ?', key = 'grid_reshaper_4_3')
+	    with grid_grapher.container():
+	        try:
+		    if other_dataframe:
+		        tmp = pd.concat([curr_filtered_df] + other_dataframe, axis = int(axis[0]), ignore_index = ignore_index)
+			st.dataframe(tmp, height = 750, use_container_width = True)
+			st.markdown(f"**DataFrame Shape: {tmp.shape[0]} x {tmp.shape[1]}**")
+			st.download_button(label="**Download Modified DataFrame as CSV**", data = convert_df(tmp), file_name=f"Concat_{st.session_state.select_df}", mime='text/csv')
+		    else:
+			st.dataframe(pd.DataFrame(), use_container_width = True)
+		except Exception as e:
+		    st.dataframe(pd.DataFrame(), use_container_width = True)
+	            log = traceback.format_exc()
+            st.subheader("**Console Log**", anchor = False)
+            st.markdown(f'{log}')
 
         with reshaper_tabs[4]:
             grid_grapher = grid([1, 2], vertical_align="bottom")
