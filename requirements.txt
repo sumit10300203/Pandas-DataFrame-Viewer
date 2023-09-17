@@ -213,6 +213,7 @@ st-circular-progress==0.3.9
 stack-data==0.6.2
 statsmodels==0.14.0
 streamlit==1.26.0
+streamlit-antd-components==0.2.1
 streamlit-authenticator==0.2.2
 streamlit-camera-input-live==0.2.0
 streamlit-card==0.0.61
@@ -222,6 +223,7 @@ streamlit-faker==0.0.2
 streamlit-gsheets @ git+https://github.com/streamlit/gsheets-connection@090e94ec95e287fa330a6820138103de25af93e7
 streamlit-image-coordinates==0.1.6
 streamlit-keyup==0.2.0
+streamlit-lottie==0.0.5
 streamlit-option-menu==0.3.6
 streamlit-toggle-switch==1.0.2
 streamlit-vertical-slider==1.0.2
