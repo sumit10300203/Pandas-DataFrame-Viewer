@@ -87,7 +87,7 @@ if page == 0:
 
     with col[1].container():
         st_lottie(load_lottiefile("lottie_files/Animation - 1694988937837.json"))
-        st_lottie(load_lottiefile("lottie_files/Animation - 1694989926620.json"), height = 200)
+        st_lottie(load_lottiefile("lottie_files/Animation - 1694989926620.json"), height = 300)
 
     st.divider()
 
