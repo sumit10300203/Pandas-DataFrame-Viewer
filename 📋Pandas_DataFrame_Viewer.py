@@ -24,6 +24,9 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+@st.cache_data(show_spinner = 0)
+def sidebar_animation(date):
+    st_lottie(load_lottiefile("lottie_files/Animation - 1694990107205.json"))
 
 def convert_df(df, index = False):
     return df.to_csv(index = index).encode('utf-8')
@@ -33,7 +36,7 @@ def load_lottiefile(filepath: str):
         return json.load(f)
 
 with st.sidebar:
-    st_lottie(load_lottiefile("lottie_files/Animation - 1694990107205.json"))
+    sidebar_animation(datetime.now().date())
     page = sac.menu([
     sac.MenuItem('Home', icon='house'),
     sac.MenuItem('DataFrame', icon='speedometer2'),
