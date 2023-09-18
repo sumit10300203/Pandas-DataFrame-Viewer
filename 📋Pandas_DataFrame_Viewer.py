@@ -15,14 +15,14 @@ import pygwalker as pyg
 import sketch
 import os
 import json
+from datetime import datetime
 
 os.environ['SKETCH_MAX_COLUMNS'] = '50'
 
 st.set_page_config(
     page_title="Dataframe Viewer",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state = "collapsed"
+    layout="wide"
 )
 
 def convert_df(df, index = False):
@@ -61,7 +61,8 @@ with st.sidebar:
 st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
 st.caption("**Made for Coders with ❤️**")
 
-if page == 0:
+@st.cache_data(show_spinner = 0)
+def home(date):
     st.divider()
     col = st.columns([5, 1])
     with col[0].container():
@@ -115,6 +116,9 @@ if page == 0:
         ''')
     with col2[1].container():
         st_lottie(load_lottiefile("lottie_files/Animation - 1694990540946.json"), height = 150)
+
+if page == 0:
+    home(datetime.now().date())
 else:
     log = ''
     with st.expander(label = '**Filters**'):
