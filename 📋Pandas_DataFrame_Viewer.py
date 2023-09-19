@@ -155,7 +155,7 @@ if page == 1:
 elif page == 2:
     st.write("")
     if st.session_state.select_df:
-        stats = curr_filtered_df.describe().copy()
+        stats = curr_filtered_df.describe().copy().T
         st.dataframe(stats, use_container_width = True, hide_index = False)
         st.markdown(f"**DataFrame Shape: {curr_filtered_df.shape[0]} x {curr_filtered_df.shape[1]}**")
         st.download_button(label="**Download Statistics DataFrame as CSV**", data = convert_df(stats, index = True), file_name=f"stats_{st.session_state.select_df}", mime='text/csv')
