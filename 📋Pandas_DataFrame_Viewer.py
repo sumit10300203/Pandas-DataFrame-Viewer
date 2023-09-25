@@ -24,7 +24,7 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
-@st.cache_data(show_spinner = 0)
+@st.cache_resource(show_spinner = 0, experimental_allow_widgets=True)
 def sidebar_animation(date):
     st_lottie(load_lottiefile("lottie_files/Animation - 1694990107205.json"))
 
@@ -64,7 +64,7 @@ with st.sidebar:
 st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
 st.caption("**Made for Coders with ❤️**")
 
-@st.cache_data(show_spinner = 0)
+@st.cache_resource(show_spinner = 0, experimental_allow_widgets=True)
 def home(date):
     st.divider()
     col = st.columns([5, 1])
