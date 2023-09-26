@@ -8,6 +8,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_extras.no_default_selectbox import selectbox
 from streamlit_extras.grid import grid
 import streamlit_antd_components as sac
+from streamlit_card import card
 from streamlit_lottie import st_lottie
 import traceback
 from wordcloud import WordCloud
