@@ -45,6 +45,7 @@ with st.sidebar:
     sac.MenuItem('Reshaper', icon='square-half'),
     sac.MenuItem('PygWalker', icon='plugin'),
     sac.MenuItem('Ask AI', icon='robot'),
+    sac.MenuItem('My Projects', icon ='card-text')
     ], index=0, format_func='title', size='small', indent=15, open_index=None, open_all=True, return_index=True)
 
     with st.expander(label = '**Upload files**', expanded = False):
@@ -665,3 +666,27 @@ elif page == 6:
                 log = traceback.format_exc()
         st.subheader("**Console Log**", anchor = False)
         st.markdown(f'{log}')
+else:
+    st.title('My Projects', anchor = False)
+    card_grid = grid(3, vertical_align="center")
+    with card_grid.container():
+        card(
+        title="Pandas Dataframe Viewer",
+        text="A website for quick data analysis and visualization of your dataset with AI",
+        image="https://user-images.githubusercontent.com/66067910/266804437-e9572603-7982-4b19-9732-18a079d48f5b.png",
+        url="https://pandas-dataframe-viewer-plotter.streamlit.app/", 
+        on_click = lambda: None)
+    with card_grid.container():
+        card(
+        title="GeeksForGeeks Profile Analytics",
+        text="A website to view GFG user's profile analytics for making their coding journey in a more organized way",
+        image="https://user-images.githubusercontent.com/66067910/266804437-e9572603-7982-4b19-9732-18a079d48f5b.png",
+        url="https://gfg-profile-analytics.streamlit.app/", 
+        on_click = lambda: None)
+    with card_grid.container():
+        card(
+        title="Thermal Power Plant Consumption Analysis in India",
+        text="A PowerBI app to show analysis of power consumption in India (2017-2020) using Prophet Model",
+        image="https://user-images.githubusercontent.com/66067910/259968786-4d4bf15a-8eef-4da3-8975-af3da9d22b1c.JPG",
+        url="https://bit.ly/3OyRl64", 
+        on_click = lambda: None)
