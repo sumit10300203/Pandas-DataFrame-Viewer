@@ -668,7 +668,7 @@ elif page == 6:
                 log = traceback.format_exc()
         st.subheader("**Console Log**", anchor = False)
         st.markdown(f'{log}')
-else:
+elif page == 7:
     st.title('My Projects', anchor = False)
     card_grid = grid(3, vertical_align="center")
     with card_grid.container():
