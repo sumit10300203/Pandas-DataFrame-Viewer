@@ -25,6 +25,7 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
 @st.cache_resource(show_spinner = 0, experimental_allow_widgets=True)
 def sidebar_animation(date):
     st_lottie(load_lottiefile("lottie_files/Animation - 1694990107205.json"))
