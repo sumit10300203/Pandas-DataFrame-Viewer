@@ -102,19 +102,23 @@ def home(date):
     ##### 🔮 Future Work
 
     * **Adding Code Export for graphs and for changes in dataframe**
+    
     * **Adding Query based filtering**
+    
     * **More Error Handling**
     ''')
     with col1[1].container():
-        st_lottie(load_lottiefile("lottie_files/Animation - 1694991370591.json"), height = 100)
+        st_lottie(load_lottiefile("lottie_files/Animation - 1694991370591.json"), height = 150)
     st.divider()
     col2 = st.columns([2, 1])
     with col2[0].container():
         st.markdown('''
         ##### 📞 Contact with me
 
-        * **Connect with me on [`LinkedIn >`](https://bit.ly/3DyD6cP)**            
+        * **Connect with me on [`LinkedIn >`](https://bit.ly/3DyD6cP)**  
+        
         * **Mail me on `sumit10300203@gmail.com`**
+        
         * **Please leave us your Feedback on [`Feedback G-Form>`](https://forms.gle/vzVN6h7FtwCn45hw6)**
         ''')
     with col2[1].container():
