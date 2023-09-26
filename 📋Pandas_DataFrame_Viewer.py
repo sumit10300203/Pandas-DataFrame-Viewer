@@ -63,9 +63,6 @@ with st.sidebar:
             st.session_state.select_df = None
             st.session_state.filtered_df = pd.DataFrame()
 
-st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
-st.caption("**Made for Coders with ❤️**")
-
 @st.cache_resource(show_spinner = 0, experimental_allow_widgets=True)
 def home(date):
     st.divider()
@@ -127,8 +124,12 @@ def home(date):
         st_lottie(load_lottiefile("lottie_files/Animation - 1694990540946.json"), height = 150)
 
 if page == 0:
+    st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
+    st.caption("**Made for Coders with ❤️**")
     home(datetime.now().date())
-else:
+elif page != 7:
+    st.title("**📋 Pandas DataFrame Viewer**", anchor = False)
+    st.caption("**Made for Coders with ❤️**")
     log = ''
     with st.expander(label = '**Filters**'):
         if st.session_state.select_df:
