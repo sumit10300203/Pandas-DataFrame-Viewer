@@ -105,7 +105,7 @@ def home(date):
     * **More Error Handling**
     ''')
     with col1[1].container():
-        st_lottie(load_lottiefile("lottie_files/Animation - 1694991370591.json"), height = 200)
+        st_lottie(load_lottiefile("lottie_files/Animation - 1694991370591.json"), height = 150)
     st.divider()
     col2 = st.columns([2, 1])
     with col2[0].container():
