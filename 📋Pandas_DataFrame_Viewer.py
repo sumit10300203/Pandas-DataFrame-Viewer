@@ -19,7 +19,6 @@ import json
 from datetime import datetime
 
 os.environ['SKETCH_MAX_COLUMNS'] = '50'
-
 st.set_page_config(
     page_title="Dataframe Viewer",
     page_icon="📊",
