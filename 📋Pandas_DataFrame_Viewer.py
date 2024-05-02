@@ -85,7 +85,7 @@ def home(date):
 
 **Share the website with your friends.**
 
-**[`GitHub Repo Link >`](https://bit.ly/3QT0wkx)**
+**[`GitHub Repo Link >`](https://github.com/sumit10300203/Pandas-DataFrame-Viewer)**
     ''')
 
     with col[1].container():
